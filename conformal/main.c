@@ -38,11 +38,24 @@ Complex complex_add(Complex a, Complex b) {
     return result;
 }
 
-// Linear interpolation between two complex numbers
+// Easing functions for smoother animations
+float ease_in_out_cubic(float t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2;
+}
+
+float ease_out_elastic(float t) {
+    const float c4 = (2 * PI) / 3;
+    return t == 0 ? 0 : t == 1 ? 1 : pow(2, -10 * t) * sin((t * 10 - 0.75) * c4) + 1;
+}
+
+// Keyframe-based interpolation between two complex numbers
 Complex complex_lerp(Complex a, Complex b, float t) {
+    // Apply easing function to create more elegant motion
+    float easedT = ease_in_out_cubic(t);
+    
     Complex result;
-    result.real = a.real + t * (b.real - a.real);
-    result.imag = a.imag + t * (b.imag - a.imag);
+    result.real = a.real + easedT * (b.real - a.real);
+    result.imag = a.imag + easedT * (b.imag - a.imag);
     return result;
 }
 
@@ -243,7 +256,7 @@ void generate_polar_grid(MappedPoint* points, int* count, int num_circles, int n
 
 int main(void) {
     // Initialize window
-    const int screenWidth = 1200;
+    const int screenWidth = 800;
     const int screenHeight = 800;
     InitWindow(screenWidth, screenHeight, "animated conformal mapping");
     SetTargetFPS(60);
@@ -256,6 +269,7 @@ int main(void) {
     float animation_time = 0.0f;
     float animation_speed = 0.01f;  // adjust for speed
     bool animate = false;
+    float previous_animation_time = 0.0f;
     
     // Maximum number of points to render
     const int MAX_POINTS = 2000;
@@ -275,7 +289,7 @@ int main(void) {
     // Grid parameters
     const int gridSize = 10;
     const float gridSpacing = 0.5f;
-    const float circleRadius = 0.1f;
+    const float circleRadius = 0.02f;
     
     // Mapping selection
     int current_mapping = 0;
@@ -405,7 +419,8 @@ int main(void) {
         if (animate) {
             animation_time += animation_speed;
             if (animation_time > 1.0f) {
-                animation_time = 0.0f;  // Loop the animation
+                animation_time = 1.0f;  // Stop at 100% instead of looping
+                animate = false;       // Turn off animation when complete
             }
         }
         
@@ -429,7 +444,7 @@ int main(void) {
             Complex interpolated = complex_lerp(points[i].z, points[i].w, animation_time);
             
             // Draw the point
-            draw_complex_circle(interpolated, circleRadius, ColorAlpha(BLUE, 0.7f), center, scale);
+            draw_complex_circle(interpolated, circleRadius, ColorAlpha(BLUE, 0.4f), center, scale);
         }
         
         // Track mouse position in complex coordinates
@@ -447,7 +462,7 @@ int main(void) {
         
         // Highlight the current mouse point and its mapping
         Complex interpolated = complex_lerp(z, w, animation_time);
-        draw_complex_circle(interpolated, circleRadius * 1.5f, RED, center, scale);
+        draw_complex_circle(interpolated, circleRadius * 2.5f, RED, center, scale);
         
         EndDrawing();
     }
