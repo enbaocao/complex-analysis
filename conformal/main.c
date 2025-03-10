@@ -258,7 +258,7 @@ void generate_concentric_circles(MappedPoint* points, int* count, int num_circle
             }
             
             // For even-spaced radial connections, connect to points on adjacent circles
-            if (c > 1 && p % 4 == 0) {
+            if (c > 1 && (i - circle_start_idx) % 4 == 0) {
                 // Find corresponding point on previous circle
                 for (int prev = circle_start_idx - points_per_circle; prev < circle_start_idx; prev++) {
                     if (prev >= 0) {
