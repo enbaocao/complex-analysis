@@ -129,12 +129,45 @@ typedef enum {
 typedef struct {
     Complex z;       // Source point
     Complex w;       // Mapped point
+    int connections[8];  // Indices of connected points, -1 if no connection
+    int num_connections; // Number of valid connections
 } MappedPoint;
+
+// Helper function to find point index in array
+int find_point_index(MappedPoint* points, int count, Complex z, float epsilon) {
+    for (int i = 0; i < count; i++) {
+        if (complex_abs(complex_create(points[i].z.real - z.real, points[i].z.imag - z.imag)) < epsilon) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Add connection between two points
+void add_connection(MappedPoint* points, int idx1, int idx2) {
+    if (idx1 < 0 || idx2 < 0) return;
+    
+    // Check if connection already exists
+    for (int i = 0; i < points[idx1].num_connections; i++) {
+        if (points[idx1].connections[i] == idx2) return;
+    }
+    
+    // Add connection if there's space
+    if (points[idx1].num_connections < 8) {
+        points[idx1].connections[points[idx1].num_connections++] = idx2;
+    }
+    
+    // Add reverse connection
+    if (points[idx2].num_connections < 8) {
+        points[idx2].connections[points[idx2].num_connections++] = idx1;
+    }
+}
 
 // Generate points for different graph types
 void generate_grid_points(MappedPoint* points, int* count, float spacing, int size, Complex (*mapping)(Complex)) {
     *count = 0;
     
+    // First, generate all points
     for (int i = -size; i <= size; i++) {
         for (int j = -size; j <= size; j++) {
             Complex z = complex_create(i * spacing, j * spacing);
@@ -148,7 +181,29 @@ void generate_grid_points(MappedPoint* points, int* count, float spacing, int si
             if (complex_abs(w) < 100.0f) {
                 points[*count].z = z;
                 points[*count].w = w;
+                points[*count].num_connections = 0;
                 (*count)++;
+            }
+        }
+    }
+    
+    // Then, add connections between adjacent grid points
+    const float epsilon = 0.01f;
+    for (int idx = 0; idx < *count; idx++) {
+        Complex z = points[idx].z;
+        
+        // Connect to adjacent points (right, up, left, down)
+        Complex neighbors[4] = {
+            complex_create(z.real + spacing, z.imag),
+            complex_create(z.real, z.imag + spacing),
+            complex_create(z.real - spacing, z.imag),
+            complex_create(z.real, z.imag - spacing)
+        };
+        
+        for (int n = 0; n < 4; n++) {
+            int neighbor_idx = find_point_index(points, *count, neighbors[n], epsilon);
+            if (neighbor_idx >= 0) {
+                add_connection(points, idx, neighbor_idx);
             }
         }
     }
@@ -157,6 +212,7 @@ void generate_grid_points(MappedPoint* points, int* count, float spacing, int si
 void generate_concentric_circles(MappedPoint* points, int* count, int num_circles, int points_per_circle, Complex (*mapping)(Complex)) {
     *count = 0;
     const float radius_step = 0.4f;
+    int center_idx = -1;
     
     // Add center point (except for reciprocal mapping)
     if (mapping != reciprocal_mapping) {
@@ -165,6 +221,8 @@ void generate_concentric_circles(MappedPoint* points, int* count, int num_circle
         if (complex_abs(w) < 100.0f) {
             points[*count].z = z;
             points[*count].w = w;
+            points[*count].num_connections = 0;
+            center_idx = *count;
             (*count)++;
         }
     }
@@ -172,6 +230,7 @@ void generate_concentric_circles(MappedPoint* points, int* count, int num_circle
     // Generate points on concentric circles
     for (int c = 1; c <= num_circles; c++) {
         float radius = c * radius_step;
+        int circle_start_idx = *count;
         
         for (int p = 0; p < points_per_circle; p++) {
             float angle = p * (2.0f * PI / points_per_circle);
@@ -181,7 +240,36 @@ void generate_concentric_circles(MappedPoint* points, int* count, int num_circle
             if (complex_abs(w) < 100.0f) {
                 points[*count].z = z;
                 points[*count].w = w;
+                points[*count].num_connections = 0;
                 (*count)++;
+            }
+        }
+        
+        // Connect points along each circle
+        int circle_end_idx = *count - 1;
+        for (int i = circle_start_idx; i <= circle_end_idx; i++) {
+            // Connect to next point in circle (wrap around at end)
+            int next_idx = (i == circle_end_idx) ? circle_start_idx : i + 1;
+            add_connection(points, i, next_idx);
+            
+            // Connect to center point for first circle
+            if (c == 1 && center_idx >= 0) {
+                add_connection(points, i, center_idx);
+            }
+            
+            // For even-spaced radial connections, connect to points on adjacent circles
+            if (c > 1 && p % 4 == 0) {
+                // Find corresponding point on previous circle
+                for (int prev = circle_start_idx - points_per_circle; prev < circle_start_idx; prev++) {
+                    if (prev >= 0) {
+                        float angle1 = atan2f(points[i].z.imag, points[i].z.real);
+                        float angle2 = atan2f(points[prev].z.imag, points[prev].z.real);
+                        if (fabsf(angle1 - angle2) < 0.1f) {
+                            add_connection(points, i, prev);
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
@@ -189,12 +277,29 @@ void generate_concentric_circles(MappedPoint* points, int* count, int num_circle
 
 void generate_radial_lines(MappedPoint* points, int* count, int num_lines, int points_per_line, float max_radius, Complex (*mapping)(Complex)) {
     *count = 0;
+    int center_idx = -1;
+    int line_start_indices[64] = {0};  // Store start index of each line, max 64 lines
+    
+    // Add center point first (except for reciprocal mapping)
+    if (mapping != reciprocal_mapping) {
+        Complex z = complex_create(0.0f, 0.0f);
+        Complex w = mapping(z);
+        if (complex_abs(w) < 100.0f) {
+            points[*count].z = z;
+            points[*count].w = w;
+            points[*count].num_connections = 0;
+            center_idx = *count;
+            (*count)++;
+        }
+    }
     
     // Generate points on radial lines
     for (int l = 0; l < num_lines; l++) {
         float angle = l * (2.0f * PI / num_lines);
         float dx = cosf(angle);
         float dy = sinf(angle);
+        
+        line_start_indices[l] = *count;
         
         for (int p = 1; p <= points_per_line; p++) {  // Start from 1 to avoid origin for reciprocal
             float radius = p * (max_radius / points_per_line);
@@ -204,19 +309,33 @@ void generate_radial_lines(MappedPoint* points, int* count, int num_lines, int p
             if (complex_abs(w) < 100.0f) {
                 points[*count].z = z;
                 points[*count].w = w;
+                points[*count].num_connections = 0;
+                
+                // Connect to previous point in the same line
+                if (p > 1) {
+                    add_connection(points, *count, *count - 1);
+                } else if (center_idx >= 0) {
+                    // First point in line connects to center
+                    add_connection(points, *count, center_idx);
+                }
+                
                 (*count)++;
             }
         }
     }
     
-    // Add center point (except for reciprocal mapping)
-    if (mapping != reciprocal_mapping) {
-        Complex z = complex_create(0.0f, 0.0f);
-        Complex w = mapping(z);
-        if (complex_abs(w) < 100.0f) {
-            points[*count].z = z;
-            points[*count].w = w;
-            (*count)++;
+    // Add circular connections between adjacent radial lines
+    for (int l = 0; l < num_lines; l++) {
+        int next_l = (l + 1) % num_lines;
+        
+        // Connect points at similar radii between adjacent lines
+        for (int p = 0; p < points_per_line; p++) {
+            int idx1 = line_start_indices[l] + p;
+            int idx2 = line_start_indices[next_l] + p;
+            
+            if (idx1 < *count && idx2 < *count) {
+                add_connection(points, idx1, idx2);
+            }
         }
     }
 }
@@ -224,6 +343,8 @@ void generate_radial_lines(MappedPoint* points, int* count, int num_lines, int p
 void generate_polar_grid(MappedPoint* points, int* count, int num_circles, int num_lines, Complex (*mapping)(Complex)) {
     *count = 0;
     const float radius_step = 0.4f;
+    int center_idx = -1;
+    int circle_start_indices[32] = {0};  // Store start index of each circle
     
     // Add center point (except for reciprocal mapping)
     if (mapping != reciprocal_mapping) {
@@ -232,6 +353,8 @@ void generate_polar_grid(MappedPoint* points, int* count, int num_circles, int n
         if (complex_abs(w) < 100.0f) {
             points[*count].z = z;
             points[*count].w = w;
+            points[*count].num_connections = 0;
+            center_idx = *count;
             (*count)++;
         }
     }
@@ -239,6 +362,7 @@ void generate_polar_grid(MappedPoint* points, int* count, int num_circles, int n
     // Generate points on concentric circles
     for (int c = 1; c <= num_circles; c++) {
         float radius = c * radius_step;
+        circle_start_indices[c-1] = *count;
         
         for (int l = 0; l < num_lines; l++) {
             float angle = l * (2.0f * PI / num_lines);
@@ -248,7 +372,36 @@ void generate_polar_grid(MappedPoint* points, int* count, int num_circles, int n
             if (complex_abs(w) < 100.0f) {
                 points[*count].z = z;
                 points[*count].w = w;
+                points[*count].num_connections = 0;
                 (*count)++;
+            }
+        }
+    }
+    
+    // Create connections for polar grid (both circular and radial)
+    for (int c = 1; c <= num_circles; c++) {
+        // Connect points along each circle
+        int circle_start = circle_start_indices[c-1];
+        int circle_end = (c < num_circles) ? circle_start_indices[c] - 1 : *count - 1;
+        int points_in_circle = circle_end - circle_start + 1;
+        
+        for (int i = circle_start; i <= circle_end; i++) {
+            // Connect to next point in circle (wrap around)
+            int next_idx = (i == circle_end) ? circle_start : i + 1;
+            add_connection(points, i, next_idx);
+            
+            // Connect to previous circle at same angle (radial connections)
+            if (c > 1) {
+                int prev_circle_start = circle_start_indices[c-2];
+                int angle_idx = (i - circle_start) % points_in_circle;
+                int prev_idx = prev_circle_start + angle_idx;
+                
+                if (prev_idx >= 0 && prev_idx < *count) {
+                    add_connection(points, i, prev_idx);
+                }
+            } else if (center_idx >= 0) {
+                // First circle connects to center
+                add_connection(points, i, center_idx);
             }
         }
     }
@@ -289,7 +442,7 @@ int main(void) {
     // Grid parameters
     const int gridSize = 15;
     const float gridSpacing = 0.4f;
-    const float circleRadius = 0.03f;
+    const float circleRadius = 0.02f;
     
     // Mapping selection
     int current_mapping = 0;
@@ -438,7 +591,27 @@ int main(void) {
         DrawLine(0, center.y, screenWidth, center.y, (Color){50, 50, 50, 255});
         DrawLine(center.x, 0, center.x, screenHeight, (Color){50, 50, 50, 255});
         
-        // Draw all points
+        // Draw all connections first (so they're behind the points)
+        for (int i = 0; i < point_count; i++) {
+            Complex p1 = complex_lerp(points[i].z, points[i].w, animation_time);
+            Vector2 screen_p1 = complex_to_screen(p1, center, scale);
+            
+            // Draw connections to other points (but don't draw duplicates)
+            for (int c = 0; c < points[i].num_connections; c++) {
+                int connect_idx = points[i].connections[c];
+                // Only draw connection if this point's index is less than the connected point
+                // This ensures we don't draw the same line twice
+                if (i < connect_idx) {
+                    Complex p2 = complex_lerp(points[connect_idx].z, points[connect_idx].w, animation_time);
+                    Vector2 screen_p2 = complex_to_screen(p2, center, scale);
+                    
+                    // Draw the connection line
+                    DrawLineEx(screen_p1, screen_p2, 1.0f, (Color){30, 30, 80, 255});
+                }
+            }
+        }
+        
+        // Draw all points on top of connections
         for (int i = 0; i < point_count; i++) {
             // Calculate interpolated position based on animation time
             Complex interpolated = complex_lerp(points[i].z, points[i].w, animation_time);
