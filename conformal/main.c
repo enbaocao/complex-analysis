@@ -156,7 +156,7 @@ void generate_grid_points(MappedPoint* points, int* count, float spacing, int si
 
 void generate_concentric_circles(MappedPoint* points, int* count, int num_circles, int points_per_circle, Complex (*mapping)(Complex)) {
     *count = 0;
-    const float radius_step = 0.5f;
+    const float radius_step = 0.4f;
     
     // Add center point (except for reciprocal mapping)
     if (mapping != reciprocal_mapping) {
@@ -223,7 +223,7 @@ void generate_radial_lines(MappedPoint* points, int* count, int num_lines, int p
 
 void generate_polar_grid(MappedPoint* points, int* count, int num_circles, int num_lines, Complex (*mapping)(Complex)) {
     *count = 0;
-    const float radius_step = 0.5f;
+    const float radius_step = 0.4f;
     
     // Add center point (except for reciprocal mapping)
     if (mapping != reciprocal_mapping) {
@@ -263,7 +263,7 @@ int main(void) {
     
     // View parameters
     Vector2 center = {screenWidth / 2, screenHeight / 2};
-    float scale = 100.0f;
+    float scale = 60.0f;  // Smaller scale = more zoomed out
     
     // Animation parameters
     float animation_time = 0.0f;
@@ -287,8 +287,8 @@ int main(void) {
     };
     
     // Grid parameters
-    const int gridSize = 10;
-    const float gridSpacing = 0.5f;
+    const int gridSize = 15;
+    const float gridSpacing = 0.4f;
     const float circleRadius = 0.02f;
     
     // Mapping selection
@@ -329,13 +329,13 @@ int main(void) {
                     generate_grid_points(points, &point_count, gridSpacing, gridSize, mappings[current_mapping]);
                     break;
                 case CONCENTRIC_CIRCLES:
-                    generate_concentric_circles(points, &point_count, 10, 36, mappings[current_mapping]);
+                    generate_concentric_circles(points, &point_count, 15, 48, mappings[current_mapping]);
                     break;
                 case RADIAL_LINES:
-                    generate_radial_lines(points, &point_count, 24, 20, 5.0f, mappings[current_mapping]);
+                    generate_radial_lines(points, &point_count, 32, 30, 6.0f, mappings[current_mapping]);
                     break;
                 case POLAR_GRID:
-                    generate_polar_grid(points, &point_count, 10, 24, mappings[current_mapping]);
+                    generate_polar_grid(points, &point_count, 15, 32, mappings[current_mapping]);
                     break;
             }
         }
@@ -351,13 +351,13 @@ int main(void) {
                     generate_grid_points(points, &point_count, gridSpacing, gridSize, mappings[current_mapping]);
                     break;
                 case CONCENTRIC_CIRCLES:
-                    generate_concentric_circles(points, &point_count, 10, 36, mappings[current_mapping]);
+                    generate_concentric_circles(points, &point_count, 15, 48, mappings[current_mapping]);
                     break;
                 case RADIAL_LINES:
-                    generate_radial_lines(points, &point_count, 24, 20, 5.0f, mappings[current_mapping]);
+                    generate_radial_lines(points, &point_count, 32, 30, 6.0f, mappings[current_mapping]);
                     break;
                 case POLAR_GRID:
-                    generate_polar_grid(points, &point_count, 10, 24, mappings[current_mapping]);
+                    generate_polar_grid(points, &point_count, 15, 32, mappings[current_mapping]);
                     break;
             }
         }
@@ -426,17 +426,17 @@ int main(void) {
         
         // Begin drawing
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        ClearBackground(BLACK);
         
         // Draw title and instructions
-        DrawText("animated conformal mapping", 20, 20, 20, BLACK);
-        DrawText("left/right: change input graph   up/down: change mapping   space: toggle animation", 20, 50, 15, DARKGRAY);
-        DrawText(TextFormat("input: %s    mapping: %s", graph_names[current_graph], mapping_names[current_mapping]), 20, 80, 18, MAROON);
-        DrawText(TextFormat("animation: %s   progress: %.0f%%", animate ? "ON" : "OFF", animation_time * 100), 20, 110, 15, DARKGRAY);
+        DrawText("animated conformal mapping", 20, 20, 20, WHITE);
+        DrawText("left/right: change input graph   up/down: change mapping   space: toggle animation", 20, 50, 15, GRAY);
+        DrawText(TextFormat("input: %s    mapping: %s", graph_names[current_graph], mapping_names[current_mapping]), 20, 80, 18, SKYBLUE);
+        DrawText(TextFormat("animation: %s   progress: %.0f%%", animate ? "ON" : "OFF", animation_time * 100), 20, 110, 15, GRAY);
         
         // Draw axes
-        DrawLine(0, center.y, screenWidth, center.y, LIGHTGRAY);
-        DrawLine(center.x, 0, center.x, screenHeight, LIGHTGRAY);
+        DrawLine(0, center.y, screenWidth, center.y, (Color){50, 50, 50, 255});
+        DrawLine(center.x, 0, center.x, screenHeight, (Color){50, 50, 50, 255});
         
         // Draw all points
         for (int i = 0; i < point_count; i++) {
@@ -444,7 +444,7 @@ int main(void) {
             Complex interpolated = complex_lerp(points[i].z, points[i].w, animation_time);
             
             // Draw the point
-            draw_complex_circle(interpolated, circleRadius, ColorAlpha(BLUE, 0.4f), center, scale);
+            draw_complex_circle(interpolated, circleRadius, SKYBLUE, center, scale);
         }
         
         // Track mouse position in complex coordinates
@@ -454,15 +454,15 @@ int main(void) {
         
         char z_text[50];
         sprintf(z_text, "z = %.2f + %.2fi", z.real, z.imag);
-        DrawText(z_text, 20, screenHeight - 40, 15, DARKGRAY);
+        DrawText(z_text, 20, screenHeight - 40, 15, GRAY);
         
         char w_text[50];
         sprintf(w_text, "f(z) = %.2f + %.2fi", w.real, w.imag);
-        DrawText(w_text, 20, screenHeight - 20, 15, DARKGRAY);
+        DrawText(w_text, 20, screenHeight - 20, 15, GRAY);
         
         // Highlight the current mouse point and its mapping
         Complex interpolated = complex_lerp(z, w, animation_time);
-        draw_complex_circle(interpolated, circleRadius * 2.5f, RED, center, scale);
+        draw_complex_circle(interpolated, circleRadius * 2.5f, PINK, center, scale);
         
         EndDrawing();
     }
