@@ -289,7 +289,7 @@ int main(void) {
     // Grid parameters
     const int gridSize = 15;
     const float gridSpacing = 0.4f;
-    const float circleRadius = 0.02f;
+    const float circleRadius = 0.03f;
     
     // Mapping selection
     int current_mapping = 0;
