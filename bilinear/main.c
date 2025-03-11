@@ -19,7 +19,7 @@ typedef enum {
 // Transformation type options
 typedef enum {
     TRANSFORM_IDENTITY,
-    TRANSFORM_CIRCLE_TO_CIRCLE,
+    TRANSFORM_CIRCLE_AND_LINE_PRESERVING,
     TRANSFORM_CIRCLE_TO_HALFPLANE
 } TransformType;
 
@@ -49,8 +49,9 @@ void UpdateTransformParameters() {
             d = 1.0 + 0.0*I;
             break;
             
-        case TRANSFORM_CIRCLE_TO_CIRCLE:
+        case TRANSFORM_CIRCLE_AND_LINE_PRESERVING:
             // Maps unit circle to another circle (shifted and scaled)
+            // Also preserves the property that lines map to lines
             a = 2.0 + 0.0*I;
             b = 1.0 + 0.5*I;
             c = 0.0 + 0.0*I;
@@ -233,8 +234,8 @@ int main(void) {
             case TRANSFORM_IDENTITY:
                 transformText = "Transform: Identity";
                 break;
-            case TRANSFORM_CIRCLE_TO_CIRCLE:
-                transformText = "Transform: Circle to Circle";
+            case TRANSFORM_CIRCLE_AND_LINE_PRESERVING:
+                transformText = "Transform: Circle/Line Preserving";
                 break;
             case TRANSFORM_CIRCLE_TO_HALFPLANE:
                 transformText = "Transform: Circle to Half-Plane";
