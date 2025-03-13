@@ -121,51 +121,43 @@ ComplexFunction functions[] = {
     { animated_func, "z^2 * e^(it)" }
 };
 
-// Convert HSL color to RGB
+// Convert HSL color to RGB - SIMPLIFIED version
 Color hsl_to_rgb(float h, float s, float l) {
+    // Simplify and make more resilient
+    
+    // Direct phase to RGB mapping (simpler)
+    float hue = h / 60.0f;  // Divide by 60 to get the color section
+    int section = (int)hue;
+    float f = hue - section;
+    
+    float p = l * (1 - s);
+    float q = l * (1 - s * f);
+    float t = l * (1 - s * (1 - f));
+    
     float r, g, b;
     
-    if (s == 0) {
-        r = g = b = l; // Achromatic
-    } else {
-        float q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        float p = 2 * l - q;
-        
-        float hk = h / 360.0f;
-        float tr = hk + 1.0f/3.0f;
-        float tg = hk;
-        float tb = hk - 1.0f/3.0f;
-        
-        if (tr < 0) tr += 1.0f;
-        if (tr > 1) tr -= 1.0f;
-        if (tg < 0) tg += 1.0f;
-        if (tg > 1) tg -= 1.0f;
-        if (tb < 0) tb += 1.0f;
-        if (tb > 1) tb -= 1.0f;
-        
-        // Calculate RGB components
-        r = tr < 1.0f/6.0f ? p + (q - p) * 6 * tr :
-            tr < 1.0f/2.0f ? q :
-            tr < 2.0f/3.0f ? p + (q - p) * (2.0f/3.0f - tr) * 6 :
-            p;
-            
-        g = tg < 1.0f/6.0f ? p + (q - p) * 6 * tg :
-            tg < 1.0f/2.0f ? q :
-            tg < 2.0f/3.0f ? p + (q - p) * (2.0f/3.0f - tg) * 6 :
-            p;
-            
-        b = tb < 1.0f/6.0f ? p + (q - p) * 6 * tb :
-            tb < 1.0f/2.0f ? q :
-            tb < 2.0f/3.0f ? p + (q - p) * (2.0f/3.0f - tb) * 6 :
-            p;
+    switch (section % 6) {
+        case 0: r = l; g = t; b = p; break;
+        case 1: r = q; g = l; b = p; break;
+        case 2: r = p; g = l; b = t; break;
+        case 3: r = p; g = q; b = l; break;
+        case 4: r = t; g = p; b = l; break;
+        case 5: r = l; g = p; b = q; break;
+        default: r = l; g = p; b = p; break;  // Fallback
     }
     
-    return (Color){ (unsigned char)(r * 255), (unsigned char)(g * 255), (unsigned char)(b * 255), 255 };
+    // Make sure values are in range and return
+    return (Color){ 
+        (unsigned char)(255 * r), 
+        (unsigned char)(255 * g), 
+        (unsigned char)(255 * b), 
+        255 
+    };
 }
 
 // Render domain coloring to image
 void render_domain_coloring(Image *image, ComplexFunction func, double centerX, double centerY, double scale, double time) {
-    Color *pixels = GetImageData(*image);
+    Color *pixels = LoadImageColors(*image);
     
     for (int y = 0; y < image->height; y++) {
         for (int x = 0; x < image->width; x++) {
@@ -181,24 +173,32 @@ void render_domain_coloring(Image *image, ComplexFunction func, double centerX, 
             double magnitude = cabs(result);
             double phase = carg(result);
             
-            // Convert magnitude to brightness using logarithmic scale
-            double logMagnitude = log(1 + magnitude);
-            double normalizedLogMagnitude = 1.0 - 1.0 / (1.0 + logMagnitude * 0.2);
-            
             // Convert phase to hue (0-360)
             float hue = fmod((phase / M_PI + 1.0) * 180.0, 360.0);
             
-            // Use HSL for coloring
+            // SIMPLER magnitude to brightness conversion
+            float lightness = 0.5f;  // Start with medium brightness
+            
+            // Apply simple logarithmic scaling to magnitude
+            if (magnitude > 0) {
+                lightness = 0.1f + 0.8f * (1.0f - 1.0f/(1.0f + log(magnitude)));
+                // Clamp to valid range
+                if (lightness > 1.0f) lightness = 1.0f;
+                if (lightness < 0.0f) lightness = 0.0f;
+            }
+            
+            // Use high saturation
             float saturation = 0.9f;
-            float lightness = 0.5f * normalizedLogMagnitude;
             
             // Set pixel color
             pixels[y * image->width + x] = hsl_to_rgb(hue, saturation, lightness);
         }
     }
     
-    UpdateTexture2D(LoadTextureFromImage(*image), pixels);
-    free(pixels);
+    // Update texture (using our image's pixels)
+    UpdateTexture(LoadTextureFromImage(*image), pixels);
+    // Release memory
+    UnloadImageColors(pixels);
 }
 
 int main(void) {
@@ -218,7 +218,9 @@ int main(void) {
     
     // Render initial function
     render_domain_coloring(&colorImage, functions[current_function], centerX, centerY, scale, animation_time);
-    UpdateTexture2D(texture, GetImageData(colorImage));
+    Color *pixels = LoadImageColors(colorImage);
+    UpdateTexture(texture, pixels);
+    UnloadImageColors(pixels);
     
     // Main game loop
     while (!WindowShouldClose()) {
@@ -229,7 +231,7 @@ int main(void) {
             
             // Re-render with new time
             render_domain_coloring(&colorImage, functions[current_function], centerX, centerY, scale, animation_time);
-            UpdateTexture2D(texture, GetImageData(colorImage));
+            UpdateTexture(texture, LoadImageColors(colorImage));
         }
         
         // Handle mouse drag for panning
@@ -241,7 +243,7 @@ int main(void) {
             
             // Re-render
             render_domain_coloring(&colorImage, functions[current_function], centerX, centerY, scale, animation_time);
-            UpdateTexture2D(texture, GetImageData(colorImage));
+            UpdateTexture(texture, LoadImageColors(colorImage));
         }
         
         // Handle mouse wheel for zooming
@@ -252,7 +254,7 @@ int main(void) {
             
             // Re-render
             render_domain_coloring(&colorImage, functions[current_function], centerX, centerY, scale, animation_time);
-            UpdateTexture2D(texture, GetImageData(colorImage));
+            UpdateTexture(texture, LoadImageColors(colorImage));
         }
         
         // Handle function button click
@@ -261,7 +263,7 @@ int main(void) {
             
             // Re-render
             render_domain_coloring(&colorImage, functions[current_function], centerX, centerY, scale, animation_time);
-            UpdateTexture2D(texture, GetImageData(colorImage));
+            UpdateTexture(texture, LoadImageColors(colorImage));
         }
         
         // Handle animate button click
@@ -278,7 +280,7 @@ int main(void) {
             
             // Re-render
             render_domain_coloring(&colorImage, functions[current_function], centerX, centerY, scale, animation_time);
-            UpdateTexture2D(texture, GetImageData(colorImage));
+            UpdateTexture(texture, LoadImageColors(colorImage));
         }
         
         // Draw
