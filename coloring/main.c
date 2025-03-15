@@ -238,7 +238,7 @@ bool render_domain_coloring(Color *pixels, FunctionType func_type, double center
                     double phase = carg(result);
                     
                     // Apply improved color mapping
-                    Color color = phase_to_color_hsv(phase, params.color_scheme, saturation, baseValue);
+                    Color color = phase_to_color_hsv(phase, saturation, baseValue);
                     color = apply_brightness(color, magnitude, params.enhanced_contrast, contrastStrength);
                     
                     // Add phase lines (isochromatic lines) if enabled
