@@ -36,24 +36,7 @@ const char* function_names[] = {
     "z^5 - z"
 };
 
-// Color scheme types
-typedef enum {
-    SCHEME_RAINBOW,
-    SCHEME_THERMAL,
-    SCHEME_GRAYSCALE,
-    SCHEME_BLUEWHITE,
-    SCHEME_PURPLEGOLD,
-    SCHEME_COUNT // Keep last for counting
-} ColorScheme;
-
-// Color scheme names for UI
-const char* color_scheme_names[] = {
-    "Rainbow",
-    "Thermal",
-    "Grayscale",
-    "Blue-White",
-    "Purple-Gold"
-};
+// Using only rainbow theme, so no color scheme types needed
 
 // Domain coloring parameters with extended color mapping options
 typedef struct {
@@ -61,55 +44,19 @@ typedef struct {
     bool show_modulus_lines;
     bool enhanced_contrast;
     float line_thickness;
-    ColorScheme color_scheme;
     float saturation;       // 0.0-1.0
     float value;            // 0.0-1.0
     float contrast_strength; // Magnitude contrast multiplier
     int anti_aliasing;      // Anti-aliasing level (1=none, 2=2x2, 4=4x4)
 } ColoringParams;
 
-// Improved phase to color mapping using HSV
-Color phase_to_color_hsv(double phase, ColorScheme scheme, float saturation, float value) {
+// Simplified phase to color mapping using HSV (rainbow only)
+Color phase_to_color_hsv(double phase, float saturation, float value) {
     // Normalize phase to 0-360 degrees for hue
     float hue = (float)(fmod(phase + M_PI, 2*M_PI) * 180.0 / M_PI);
     
-    // Adjust color mapping based on scheme
-    switch(scheme) {
-        case SCHEME_RAINBOW:
-            // Full rainbow spectrum (default)
-            return ColorFromHSV(hue, saturation, value);
-            
-        case SCHEME_THERMAL:
-            // Red-Yellow-White thermal gradient
-            // Map hue from 0-60 (red to yellow)
-            hue = fmodf(hue * 1/6 + 360, 60);
-            return ColorFromHSV(hue, saturation, value);
-            
-        case SCHEME_GRAYSCALE: {
-            // Pure grayscale using only value
-            float grayValue = value * (0.5 + 0.5 * sin(phase));
-            return ColorFromHSV(0, 0, grayValue);
-        }
-            
-        case SCHEME_BLUEWHITE: {
-            // Cool blue gradient
-            hue = 210; // Blue base
-            // Vary saturation based on phase
-            float blueSat = saturation * (0.5 + 0.5 * sin(phase));
-            return ColorFromHSV(hue, blueSat, value);
-        }
-            
-        case SCHEME_PURPLEGOLD: {
-            // Purple to gold gradient
-            // Map between purple (270) and gold (45)
-            float mappedHue = 270 + (phase + M_PI) * (45 - 270) / (2 * M_PI);
-            if (mappedHue < 0) mappedHue += 360;
-            return ColorFromHSV(mappedHue, saturation, value);
-        }
-            
-        default:
-            return ColorFromHSV(hue, saturation, value);
-    }
+    // Rainbow spectrum
+    return ColorFromHSV(hue, saturation, value);
 }
 
 // Apply brightness based on magnitude with improved controls
@@ -341,8 +288,8 @@ bool render_domain_coloring(Color *pixels, FunctionType func_type, double center
     return true;
 }
 
-// Draw an improved color legend showing the current color scheme
-void draw_color_legend(ColorScheme scheme, float saturation, float value) {
+// Draw a color legend showing the rainbow spectrum
+void draw_color_legend(float saturation, float value) {
     // Draw the legend background
     DrawRectangle(SCREEN_WIDTH - 100, 60, 80, 150, WHITE);
     DrawRectangleLines(SCREEN_WIDTH - 100, 60, 80, 150, BLACK);
@@ -350,11 +297,11 @@ void draw_color_legend(ColorScheme scheme, float saturation, float value) {
     // Draw the title
     DrawText("Phase", SCREEN_WIDTH - 90, 65, 18, BLACK);
     
-    // Draw color gradient for the current scheme
+    // Draw rainbow color gradient
     for (int i = 0; i < 120; i++) {
         // Convert position to phase (-π to π)
         double phase = M_PI * (2.0 * i / 120.0 - 1.0);
-        Color color = phase_to_color_hsv(phase, scheme, saturation, value);
+        Color color = phase_to_color_hsv(phase, saturation, value);
         
         // Draw a line segment with this color
         DrawLine(SCREEN_WIDTH - 90, 90 + i, SCREEN_WIDTH - 30, 90 + i, color);
@@ -364,8 +311,8 @@ void draw_color_legend(ColorScheme scheme, float saturation, float value) {
     DrawText("-π", SCREEN_WIDTH - 90, 85 + 120, 16, BLACK);
     DrawText("+π", SCREEN_WIDTH - 45, 85 + 120, 16, BLACK);
     
-    // Show current scheme name
-    DrawText(color_scheme_names[scheme], SCREEN_WIDTH - 90, 215, 12, BLACK);
+    // Show rainbow label
+    DrawText("Rainbow", SCREEN_WIDTH - 90, 215, 12, BLACK);
 }
 
 // Draw a magnitude legend
@@ -393,21 +340,7 @@ void draw_magnitude_legend() {
     DrawText("5+", SCREEN_WIDTH - 150, 85 + 120, 16, BLACK);
 }
 
-// UI function to handle color scheme changes - returns true if update needed
-bool handle_color_scheme_button(Rectangle *colorSchemeButton, ColoringParams *params) {
-    DrawRectangleRec(*colorSchemeButton, LIGHTGRAY);
-    DrawText(TextFormat("Color: %s", color_scheme_names[params->color_scheme]), 
-             colorSchemeButton->x + 10, colorSchemeButton->y + 5, 20, BLACK);
-             
-    // Handle color scheme button click
-    if (CheckCollisionPointRec(GetMousePosition(), *colorSchemeButton) && 
-        IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-        params->color_scheme = (params->color_scheme + 1) % SCHEME_COUNT;
-        return true; // Signal that we need to update the rendering
-    }
-    
-    return false;
-}
+// Removed color scheme button handler since we only use rainbow
 
 int main(void) {
     // Initialize window
@@ -424,13 +357,12 @@ int main(void) {
     double centerY = 0.0;
     FunctionType current_function = FUNC_EXP;
     
-    // Extended coloring parameters with improved color mapping
+    // Extended coloring parameters with improved color mapping (rainbow only)
     ColoringParams coloring_params = {
         .show_phase_lines = true,
         .show_modulus_lines = true,
         .enhanced_contrast = true,
         .line_thickness = 0.05f,
-        .color_scheme = SCHEME_RAINBOW,
         .saturation = 0.9f,
         .value = 1.0f,
         .contrast_strength = 1.0f,
@@ -471,8 +403,7 @@ int main(void) {
     Rectangle modulusLineButton = { 170, SCREEN_HEIGHT - 110, 150, 30 };
     Rectangle contrastButton = { 330, SCREEN_HEIGHT - 110, 150, 30 };
     Rectangle resetButton = { 490, SCREEN_HEIGHT - 110, 150, 30 };
-    Rectangle colorSchemeButton = { 330, SCREEN_HEIGHT - 70, 240, 30 }; // New button for color scheme
-    Rectangle antiAliasingButton = { 580, SCREEN_HEIGHT - 110, 170, 30 }; // Anti-aliasing toggle button
+    Rectangle antiAliasingButton = { 330, SCREEN_HEIGHT - 70, 240, 30 }; // Anti-aliasing toggle button
     
     // Main game loop
     while (!WindowShouldClose()) {
@@ -517,10 +448,7 @@ int main(void) {
             needsUpdate = true;
         }
         
-        // Handle color scheme button
-        if (handle_color_scheme_button(&colorSchemeButton, &coloring_params)) {
-            needsUpdate = true;
-        }
+        // Removed color scheme button handler
         
         // Handle anti-aliasing button
         if (CheckCollisionPointRec(GetMousePosition(), antiAliasingButton) && 
@@ -539,7 +467,6 @@ int main(void) {
             coloring_params.show_phase_lines = true;
             coloring_params.show_modulus_lines = true;
             coloring_params.enhanced_contrast = true;
-            coloring_params.color_scheme = SCHEME_RAINBOW;
             coloring_params.anti_aliasing = 1; // Reset to no anti-aliasing
             needsUpdate = true;
         }
@@ -572,11 +499,7 @@ int main(void) {
             needsUpdate = true;
         }
         
-        // Toggle color scheme with 'S'
-        if (IsKeyPressed(KEY_S)) {
-            coloring_params.color_scheme = (coloring_params.color_scheme + 1) % SCHEME_COUNT;
-            needsUpdate = true;
-        }
+        // Removed color scheme toggle
         
         // Toggle anti-aliasing with 'A'
         if (IsKeyPressed(KEY_A)) {
@@ -654,7 +577,7 @@ int main(void) {
             DrawText(TextFormat("Center: (%.2f, %.2f)", centerX, centerY), 10, 40, 20, BLACK);
             
             // Draw legends with updated color scheme
-            draw_color_legend(coloring_params.color_scheme, coloring_params.saturation, coloring_params.value);
+            draw_color_legend(coloring_params.saturation, coloring_params.value);
             draw_magnitude_legend();
             
             // Draw UI buttons
@@ -674,8 +597,7 @@ int main(void) {
             DrawRectangleRec(resetButton, LIGHTGRAY);
             DrawText("Reset View", resetButton.x + 30, resetButton.y + 5, 20, BLACK);
             
-            // Draw the color scheme button (handled by handle_color_scheme_button)
-            handle_color_scheme_button(&colorSchemeButton, &coloring_params);
+            // Removed color scheme button
             
             // Draw anti-aliasing button
             DrawRectangleRec(antiAliasingButton, LIGHTGRAY);
@@ -717,7 +639,7 @@ int main(void) {
             // Draw help
             DrawText("Left/Right arrows: change function", 10, SCREEN_HEIGHT - 150, 16, DARKGRAY);
             DrawText("P: toggle phase lines, M: toggle modulus lines", 10, SCREEN_HEIGHT - 170, 16, DARKGRAY);
-            DrawText("C: toggle enhanced contrast, S: change color scheme", 10, SCREEN_HEIGHT - 190, 16, DARKGRAY);
+            DrawText("C: toggle enhanced contrast", 10, SCREEN_HEIGHT - 190, 16, DARKGRAY);
             DrawText("[/]: adjust saturation, -/=: adjust contrast", 10, SCREEN_HEIGHT - 210, 16, DARKGRAY);
             DrawText("A: cycle anti-aliasing (1x→2x→4x→1x)", 10, SCREEN_HEIGHT - 230, 16, DARKGRAY);
             DrawText("Mouse drag: pan view, Mouse wheel: zoom in/out", 10, SCREEN_HEIGHT - 250, 16, DARKGRAY);
