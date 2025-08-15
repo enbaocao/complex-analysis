@@ -390,7 +390,7 @@ int main(void) {
     bool animate = false;
     float previous_animation_time = 0.0f;
     
-    const int MAX_POINTS = 2000;
+    const int MAX_POINTS = 6000;
     MappedPoint* points = (MappedPoint*)malloc(MAX_POINTS * sizeof(MappedPoint));
     int point_count = 0;
     
@@ -403,9 +403,17 @@ int main(void) {
         "polar grid"
     };
     
-    const int gridSize = 15;
-    const float gridSpacing = 0.4f;
-    const float circleRadius = 0.02f;
+    const int gridSize = 25;          // half-extent in steps from origin
+    const float gridSpacing = 0.25f;  // spacing of grid points
+    const float circleRadius = 0.015f;
+
+    const int circlesCount = 24;
+    const int pointsPerCircle = 96;
+    const int radialLines = 64;
+    const int pointsPerRadial = 40;
+    const float radialMaxRadius = 6.0f;
+    const int polarCircles = 24;
+    const int polarLines = 64;
     
     int current_mapping = 0;
     const int mapping_count = 5;
@@ -438,13 +446,13 @@ int main(void) {
                     generate_grid_points(points, &point_count, gridSpacing, gridSize, mappings[current_mapping]);
                     break;
                 case CONCENTRIC_CIRCLES:
-                    generate_concentric_circles(points, &point_count, 15, 48, mappings[current_mapping]);
+                    generate_concentric_circles(points, &point_count, circlesCount, pointsPerCircle, mappings[current_mapping]);
                     break;
                 case RADIAL_LINES:
-                    generate_radial_lines(points, &point_count, 32, 30, 6.0f, mappings[current_mapping]);
+                    generate_radial_lines(points, &point_count, radialLines, pointsPerRadial, radialMaxRadius, mappings[current_mapping]);
                     break;
                 case POLAR_GRID:
-                    generate_polar_grid(points, &point_count, 15, 32, mappings[current_mapping]);
+                    generate_polar_grid(points, &point_count, polarCircles, polarLines, mappings[current_mapping]);
                     break;
             }
         }
@@ -459,13 +467,13 @@ int main(void) {
                     generate_grid_points(points, &point_count, gridSpacing, gridSize, mappings[current_mapping]);
                     break;
                 case CONCENTRIC_CIRCLES:
-                    generate_concentric_circles(points, &point_count, 15, 48, mappings[current_mapping]);
+                    generate_concentric_circles(points, &point_count, circlesCount, pointsPerCircle, mappings[current_mapping]);
                     break;
                 case RADIAL_LINES:
-                    generate_radial_lines(points, &point_count, 32, 30, 6.0f, mappings[current_mapping]);
+                    generate_radial_lines(points, &point_count, radialLines, pointsPerRadial, radialMaxRadius, mappings[current_mapping]);
                     break;
                 case POLAR_GRID:
-                    generate_polar_grid(points, &point_count, 15, 32, mappings[current_mapping]);
+                    generate_polar_grid(points, &point_count, polarCircles, polarLines, mappings[current_mapping]);
                     break;
             }
         }
@@ -480,13 +488,13 @@ int main(void) {
                     generate_grid_points(points, &point_count, gridSpacing, gridSize, mappings[current_mapping]);
                     break;
                 case CONCENTRIC_CIRCLES:
-                    generate_concentric_circles(points, &point_count, 10, 36, mappings[current_mapping]);
+                    generate_concentric_circles(points, &point_count, circlesCount, pointsPerCircle, mappings[current_mapping]);
                     break;
                 case RADIAL_LINES:
-                    generate_radial_lines(points, &point_count, 24, 20, 5.0f, mappings[current_mapping]);
+                    generate_radial_lines(points, &point_count, radialLines, pointsPerRadial, radialMaxRadius, mappings[current_mapping]);
                     break;
                 case POLAR_GRID:
-                    generate_polar_grid(points, &point_count, 10, 24, mappings[current_mapping]);
+                    generate_polar_grid(points, &point_count, polarCircles, polarLines, mappings[current_mapping]);
                     break;
             }
         }
@@ -501,13 +509,13 @@ int main(void) {
                     generate_grid_points(points, &point_count, gridSpacing, gridSize, mappings[current_mapping]);
                     break;
                 case CONCENTRIC_CIRCLES:
-                    generate_concentric_circles(points, &point_count, 10, 36, mappings[current_mapping]);
+                    generate_concentric_circles(points, &point_count, circlesCount, pointsPerCircle, mappings[current_mapping]);
                     break;
                 case RADIAL_LINES:
-                    generate_radial_lines(points, &point_count, 24, 20, 5.0f, mappings[current_mapping]);
+                    generate_radial_lines(points, &point_count, radialLines, pointsPerRadial, radialMaxRadius, mappings[current_mapping]);
                     break;
                 case POLAR_GRID:
-                    generate_polar_grid(points, &point_count, 10, 24, mappings[current_mapping]);
+                    generate_polar_grid(points, &point_count, polarCircles, polarLines, mappings[current_mapping]);
                     break;
             }
         }

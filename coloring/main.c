@@ -7,13 +7,6 @@
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 800
 
-static inline void DrawTextBold(const char *text, int posX, int posY, int fontSize, Color color) {
-    DrawText(text, posX, posY, fontSize, color);
-    DrawText(text, posX + 1, posY, fontSize, color);
-    DrawText(text, posX, posY + 1, fontSize, color);
-    DrawText(text, posX + 1, posY + 1, fontSize, color);
-}
-
 static inline unsigned char lerp_byte(unsigned char a, unsigned char b, float t) {
     return (unsigned char)(a + (b - a) * t);
 }
@@ -444,26 +437,26 @@ int main(void) {
         BeginDrawing();
             ClearBackground(RAYWHITE);
             DrawTexture(texture, 0, 0, WHITE);
-            DrawTextBold(TextFormat("Scale: %.2f", scale), 10, 10, 20, WHITE);
-            DrawTextBold(TextFormat("Center: (%.2f, %.2f)", centerX, centerY), 10, 40, 20, WHITE);
+            DrawText(TextFormat("Scale: %.2f", scale), 10, 10, 20, WHITE);
+            DrawText(TextFormat("Center: (%.2f, %.2f)", centerX, centerY), 10, 40, 20, WHITE);
             draw_color_legend(coloring_params.saturation, coloring_params.value);
             draw_magnitude_legend();
             DrawRectangleRec(functionButton, LIGHTGRAY);
-            DrawTextBold(TextFormat("Function: %s", function_names[current_function]), 
+            DrawText(TextFormat("Function: %s", function_names[current_function]), 
                      functionButton.x + 10, functionButton.y + 5, 20, BLACK);
             DrawRectangleRec(phaseLineButton, coloring_params.show_phase_lines ? SKYBLUE : LIGHTGRAY);
-            DrawTextBold("Phase Lines", phaseLineButton.x + 10, phaseLineButton.y + 5, 20, BLACK);
+            DrawText("Phase Lines", phaseLineButton.x + 10, phaseLineButton.y + 5, 20, BLACK);
             DrawRectangleRec(modulusLineButton, coloring_params.show_modulus_lines ? SKYBLUE : LIGHTGRAY);
-            DrawTextBold("Modulus Lines", modulusLineButton.x + 10, modulusLineButton.y + 5, 20, BLACK);
+            DrawText("Modulus Lines", modulusLineButton.x + 10, modulusLineButton.y + 5, 20, BLACK);
             DrawRectangleRec(contrastButton, coloring_params.enhanced_contrast ? SKYBLUE : LIGHTGRAY);
-            DrawTextBold("Enhanced Contrast", contrastButton.x + 10, contrastButton.y + 5, 20, BLACK);
+            DrawText("Enhanced Contrast", contrastButton.x + 10, contrastButton.y + 5, 20, BLACK);
             DrawRectangleRec(resetButton, LIGHTGRAY);
-            DrawTextBold("Reset View", resetButton.x + 30, resetButton.y + 5, 20, BLACK);
+            DrawText("Reset View", resetButton.x + 30, resetButton.y + 5, 20, BLACK);
             DrawRectangleRec(antiAliasingButton, LIGHTGRAY);
-            DrawTextBold(TextFormat("AA: %dx", coloring_params.anti_aliasing), 
+            DrawText(TextFormat("AA: %dx", coloring_params.anti_aliasing), 
                      antiAliasingButton.x + 20, antiAliasingButton.y + 5, 20, BLACK);
-            DrawTextBold(TextFormat("Sat: %.1f", coloring_params.saturation), 580, SCREEN_HEIGHT - 70, 16, BLACK);
-            DrawTextBold(TextFormat("Contrast: %.1f", coloring_params.contrast_strength), 580, SCREEN_HEIGHT - 50, 16, BLACK);
+            DrawText(TextFormat("Sat: %.1f", coloring_params.saturation), 580, SCREEN_HEIGHT - 70, 16, BLACK);
+            DrawText(TextFormat("Contrast: %.1f", coloring_params.contrast_strength), 580, SCREEN_HEIGHT - 50, 16, BLACK);
             if (status_message.active) {
                 Color msgColor;
                 switch(status_message.status) {
@@ -481,16 +474,16 @@ int main(void) {
                 }
                 DrawRectangle(SCREEN_WIDTH/2 - MeasureText(status_message.message, 20)/2 - 10,
                              10, MeasureText(status_message.message, 20) + 20, 40, Fade(BLACK, 0.7f));
-                DrawTextBold(status_message.message, 
+                DrawText(status_message.message, 
                          SCREEN_WIDTH/2 - MeasureText(status_message.message, 20)/2,
                          20, 20, msgColor);
             }
-            DrawTextBold("Left/Right arrows: change function", 10, SCREEN_HEIGHT - 150, 16, WHITE);
-            DrawTextBold("P: toggle phase lines, M: toggle modulus lines", 10, SCREEN_HEIGHT - 170, 16, WHITE);
-            DrawTextBold("C: toggle enhanced contrast", 10, SCREEN_HEIGHT - 190, 16, WHITE);
-            DrawTextBold("[/]: adjust saturation, -/=: adjust contrast", 10, SCREEN_HEIGHT - 210, 16, WHITE);
-            DrawTextBold("A: cycle anti-aliasing (1x→2x→4x→1x)", 10, SCREEN_HEIGHT - 230, 16, WHITE);
-            DrawTextBold("Mouse drag: pan view, Mouse wheel: zoom in/out", 10, SCREEN_HEIGHT - 250, 16, WHITE);
+            DrawText("Left/Right arrows: change function", 10, SCREEN_HEIGHT - 150, 16, WHITE);
+            DrawText("P: toggle phase lines, M: toggle modulus lines", 10, SCREEN_HEIGHT - 170, 16, WHITE);
+            DrawText("C: toggle enhanced contrast", 10, SCREEN_HEIGHT - 190, 16, WHITE);
+            DrawText("[/]: adjust saturation, -/=: adjust contrast", 10, SCREEN_HEIGHT - 210, 16, WHITE);
+            DrawText("A: cycle anti-aliasing (1x→2x→4x→1x)", 10, SCREEN_HEIGHT - 230, 16, WHITE);
+            DrawText("Mouse drag: pan view, Mouse wheel: zoom in/out", 10, SCREEN_HEIGHT - 250, 16, WHITE);
             
         EndDrawing();
     }
