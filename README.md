@@ -34,46 +34,14 @@ hands-on, realtime visuals for core ideas in complex analysis. built in c with r
 ### domain coloring
 located in `coloring/`. domain coloring for complex-valued functions: hue = phase, brightness = magnitude.
 
-features:
-- Multiple complex functions (exp, sin, tan, reciprocal, polynomial)
-- Phase and modulus lines
-- Adjustable contrast and saturation
-- Anti-aliasing options
-- Pan and zoom interface
-
 ### conformal mappings
 located in `conformal/`. watch grids morph under mappings.
-
-features:
-- Various input graph types (rectangular grid, concentric circles, radial lines, polar grid)
-- Multiple mapping functions (identity, square, reciprocal, exponential, Möbius)
-- Animated transitions between domains
-- Mouse tracking to visualize individual point mappings
 
 ### bilinear transformations
 located in `bilinear/`. möbius maps: (az+b)/(cz+d).
 
-features:
-- Visualization of circle and line preserving properties
-- Mapping the unit disk to the upper half-plane
-- Interactive input type selection
-
-## suggested additions
-
-### complex series visualization
-visualize how taylor and laurent series approximate complex functions with increasing terms.
-
-### riemann surfaces
-represent multi-valued functions like sqrt or log as riemann surfaces.
-
-### complex integration
-visualize contour integration and the residue theorem with interactive paths.
-
-### complex dynamical systems
-explore julia sets, the mandelbrot set, and basins of attraction for newton's method.
-
-### branch cuts
-interactive visualization of branch cuts and riemann sheets.
+## future additions
+complex series visualization (taylor/laurent approximations), riemann surfaces (multi‑valued sqrt/log), complex integration (contours, residues), complex dynamical systems (julia/mandelbrot/newton basins), branch cuts (riemann sheets).
 
 ## build & run
 
@@ -111,13 +79,4 @@ done
 - series → function: log, taylor/laurent view
 - conformal → input: radial lines, mapping: reciprocal
 
-## controls
-
-controls show in-window. common:
-- mouse drag: pan
-- mouse wheel: zoom
-- arrows: change function/input
-- space: toggle animation
-
-## license
-mit — see LICENSE.
+ 
