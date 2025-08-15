@@ -1,78 +1,123 @@
-# Complex Analysis Visualizations
+# complex analysis visualizations
 
-Interactive visualizations for complex analysis concepts using raylib and C. These visualizations were created to support learning and teaching complex analysis.
+hands-on, realtime visuals for core ideas in complex analysis. built in c with raylib. welcoming to poke, tweak, and learn from.
 
-## Current Visualizations
+## gallery
 
-### Domain Coloring
-Located in `/coloring/` - Visualizes complex-valued functions using domain coloring techniques. Maps the phase (argument) to color hue and magnitude to brightness.
+<p align="center">
+  <img src="images/circle-to-half-plane.png" width="360" alt="circle to half-plane"/><br/>
+  <em>bilinear: circle-to-half-plane</em>
+</p>
 
-Features:
+<p align="center">
+  <img src="images/exponential-taylor-approx.png" width="360" alt="exponential taylor approximation"/><br/>
+  <em>series: exponential taylor approx</em>
+</p>
+
+<p align="center">
+  <img src="images/fifth-power-z-minus-z-coloring.png" width="360" alt="fifth power z minus z domain coloring"/><br/>
+  <em>coloring: fifth power z minus z</em>
+</p>
+
+<p align="center">
+  <img src="images/log-taylor-approx.png" width="360" alt="log taylor approximation"/><br/>
+  <em>series: log taylor approx</em>
+</p>
+
+<p align="center">
+  <img src="images/radial-lines-reciprocal-mapping.png" width="360" alt="radial lines reciprocal mapping"/><br/>
+  <em>conformal: radial lines, reciprocal</em>
+</p>
+
+## current visualizations
+
+### domain coloring
+located in `coloring/`. domain coloring for complex-valued functions: hue = phase, brightness = magnitude.
+
+features:
 - Multiple complex functions (exp, sin, tan, reciprocal, polynomial)
 - Phase and modulus lines
 - Adjustable contrast and saturation
 - Anti-aliasing options
 - Pan and zoom interface
 
-### Conformal Mappings
-Located in `/conformal/` - Demonstrates how different complex functions transform regular grids and patterns.
+### conformal mappings
+located in `conformal/`. watch grids morph under mappings.
 
-Features:
+features:
 - Various input graph types (rectangular grid, concentric circles, radial lines, polar grid)
 - Multiple mapping functions (identity, square, reciprocal, exponential, Möbius)
 - Animated transitions between domains
 - Mouse tracking to visualize individual point mappings
 
-### Bilinear Transformations
-Located in `/bilinear/` - Explores specific conformal maps in the form (az+b)/(cz+d).
+### bilinear transformations
+located in `bilinear/`. möbius maps: (az+b)/(cz+d).
 
-Features:
+features:
 - Visualization of circle and line preserving properties
 - Mapping the unit disk to the upper half-plane
 - Interactive input type selection
 
-## Suggested Additional Visualizations
+## suggested additions
 
-### Complex Series Visualization
-Visualize how Taylor and Laurent series approximate complex functions with increasing terms.
+### complex series visualization
+visualize how taylor and laurent series approximate complex functions with increasing terms.
 
-### Riemann Surfaces
-Represent multi-valued functions like square root or logarithm as Riemann surfaces.
+### riemann surfaces
+represent multi-valued functions like sqrt or log as riemann surfaces.
 
-### Complex Integration
-Visualize contour integration and the residue theorem with interactive paths.
+### complex integration
+visualize contour integration and the residue theorem with interactive paths.
 
-### Complex Dynamical Systems
-Explore Julia sets, the Mandelbrot set, and basins of attraction for Newton's method.
+### complex dynamical systems
+explore julia sets, the mandelbrot set, and basins of attraction for newton's method.
 
-### Branch Cuts
-Interactive visualization of branch cuts and Riemann sheets.
+### branch cuts
+interactive visualization of branch cuts and riemann sheets.
 
-## Building & Running
+## build & run
 
-### Prerequisites
-- A C compiler (gcc/clang)
-- [raylib](https://www.raylib.com/) installed on your system
+### prerequisites
+- a c compiler (clang/gcc)
+- raylib and pkg-config
 
-### Compilation
-In each project directory:
-
+macos (homebrew):
 ```bash
-gcc main.c -o visualization -lraylib -lm
+brew install raylib pkg-config
 ```
 
-### Running
+### compile (repo root)
+build all apps:
+
 ```bash
-./visualization
+mkdir -p bin
+for d in bilinear coloring conformal series; do \
+  cc "$d/main.c" -std=c11 -o "bin/$d" $(pkg-config --cflags --libs raylib); \
+done
 ```
 
-## Controls
+### run
+```bash
+./bin/bilinear
+./bin/coloring
+./bin/conformal
+./bin/series
+```
 
-Controls vary between visualizations but are displayed in the application window. Common controls include:
-- Mouse drag to pan
-- Mouse wheel to zoom
-- Arrow keys to change functions or input types
-- Space to toggle animations
+### recreate the gallery shots
+- bilinear → input: unit circle, transform: circle to half-plane
+- series → function: exp, split or error view; increase terms
+- coloring → function: z^5 - z (cycle with ←/→)
+- series → function: log, taylor/laurent view
+- conformal → input: radial lines, mapping: reciprocal
 
-## License
-MIT License - See LICENSE file for details.
+## controls
+
+controls show in-window. common:
+- mouse drag: pan
+- mouse wheel: zoom
+- arrows: change function/input
+- space: toggle animation
+
+## license
+mit — see LICENSE.
