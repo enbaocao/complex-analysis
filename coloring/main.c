@@ -7,6 +7,24 @@
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 800
 
+static inline unsigned char lerp_byte(unsigned char a, unsigned char b, float t) {
+    return (unsigned char)(a + (b - a) * t);
+}
+
+static inline float luminance(Color c) {
+    return (0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b) / 255.0f;
+}
+
+static inline Color blend_contrast_line(Color base, float alpha) {
+    float lum = luminance(base);
+    unsigned char target = (lum > 0.5f) ? 0 : 255;
+    Color out = base;
+    out.r = lerp_byte(base.r, target, alpha);
+    out.g = lerp_byte(base.g, target, alpha);
+    out.b = lerp_byte(base.b, target, alpha);
+    return out;
+}
+
 float Clamp(float value, float min, float max) {
     if (value < min) return min;
     if (value > max) return max;
@@ -54,7 +72,7 @@ Color apply_brightness(Color color, double magnitude, bool enhanced_contrast, fl
     float brightness;
     if (enhanced_contrast) {
         brightness = 0.5 * (1.0 - 1.0/(1.0 + log(1.0 + magnitude * contrast_strength)));
-        brightness = powf(brightness, 0.8); // Enhance contrast
+        brightness = powf(brightness, 0.75f);
     } else {
         brightness = 0.5 * (1.0 - 1.0/(1.0 + log(1.0 + magnitude)));
     }
@@ -68,9 +86,7 @@ Color apply_brightness(Color color, double magnitude, bool enhanced_contrast, fl
 Color add_phase_lines(Color color, double phase, float thickness) {
     double phase_mod = fmod(phase + M_PI, M_PI/4);
     if (phase_mod < thickness || phase_mod > M_PI/4 - thickness) {
-        color.r = (color.r + 255) / 2;
-        color.g = (color.g + 255) / 2;
-        color.b = (color.b + 255) / 2;
+        color = blend_contrast_line(color, 0.35f);
     }
     return color;
 }
@@ -79,9 +95,7 @@ Color add_modulus_lines(Color color, double magnitude, float thickness) {
     double log_mag = log(magnitude + 1.0);
     double mod = fmod(log_mag, 1.0);
     if (mod < thickness || mod > 1.0 - thickness) {
-        color.r = (color.r + 255) / 2;
-        color.g = (color.g + 255) / 2;
-        color.b = (color.b + 255) / 2;
+        color = blend_contrast_line(color, 0.35f);
     }
     return color;
 }
@@ -164,8 +178,8 @@ bool render_domain_coloring(Color *pixels, FunctionType func_type, double center
         return false;
     }
 
-    float saturation = params.saturation > 0 ? params.saturation : 0.9f;
-    float baseValue = params.value > 0 ? params.value : 1.0f;
+    float saturation = params.saturation > 0 ? params.saturation : 0.85f;
+    float baseValue = params.value > 0 ? params.value : 0.95f;
     float contrastStrength = params.contrast_strength > 0 ? params.contrast_strength : 1.0f;
     int aa_level = params.anti_aliasing > 0 ? params.anti_aliasing : 1;
 
@@ -231,8 +245,8 @@ bool render_domain_coloring(Color *pixels, FunctionType func_type, double center
 }
 
 void draw_color_legend(float saturation, float value) {
-    DrawRectangle(SCREEN_WIDTH - 100, 60, 80, 150, WHITE);
-    DrawRectangleLines(SCREEN_WIDTH - 100, 60, 80, 150, BLACK);
+    DrawRectangle(SCREEN_WIDTH - 100, 60, 80, 190, WHITE);
+    DrawRectangleLines(SCREEN_WIDTH - 100, 60, 80, 190, BLACK);
     DrawText("Phase", SCREEN_WIDTH - 90, 65, 18, BLACK);
     for (int i = 0; i < 120; i++) {
         double phase = M_PI * (2.0 * i / 120.0 - 1.0);
@@ -241,12 +255,12 @@ void draw_color_legend(float saturation, float value) {
     }
     DrawText("-π", SCREEN_WIDTH - 90, 85 + 120, 16, BLACK);
     DrawText("+π", SCREEN_WIDTH - 45, 85 + 120, 16, BLACK);
-    DrawText("Rainbow", SCREEN_WIDTH - 90, 215, 12, BLACK);
+    DrawText("Rainbow", SCREEN_WIDTH - 90, 235, 12, BLACK);
 }
 
 void draw_magnitude_legend() {
-    DrawRectangle(SCREEN_WIDTH - 210, 60, 100, 150, WHITE);
-    DrawRectangleLines(SCREEN_WIDTH - 210, 60, 100, 150, BLACK);
+    DrawRectangle(SCREEN_WIDTH - 210, 60, 100, 170, WHITE);
+    DrawRectangleLines(SCREEN_WIDTH - 210, 60, 100, 170, BLACK);
     DrawText("Magnitude", SCREEN_WIDTH - 200, 65, 18, BLACK);
     for (int i = 0; i < 120; i++) {
         double magnitude = 5.0 * (120.0 - i) / 120.0;
@@ -300,10 +314,10 @@ int main(void) {
     UpdateTexture(texture, pixels);
     UnloadImageColors(pixels);
     Rectangle functionButton = { 10, SCREEN_HEIGHT - 70, 240, 30 };
-    Rectangle phaseLineButton = { 10, SCREEN_HEIGHT - 110, 150, 30 };
-    Rectangle modulusLineButton = { 170, SCREEN_HEIGHT - 110, 150, 30 };
-    Rectangle contrastButton = { 330, SCREEN_HEIGHT - 110, 150, 30 };
-    Rectangle resetButton = { 490, SCREEN_HEIGHT - 110, 150, 30 };
+    Rectangle phaseLineButton = { 10, SCREEN_HEIGHT - 110, 160, 30 };
+    Rectangle modulusLineButton = { 180, SCREEN_HEIGHT - 110, 190, 30 };
+    Rectangle contrastButton = { 380, SCREEN_HEIGHT - 110, 210, 30 };
+    Rectangle resetButton = { 600, SCREEN_HEIGHT - 110, 150, 30 };
     Rectangle antiAliasingButton = { 330, SCREEN_HEIGHT - 70, 240, 30 };
     while (!WindowShouldClose()) {
         bool needsUpdate = false;
@@ -435,7 +449,7 @@ int main(void) {
             DrawRectangleRec(modulusLineButton, coloring_params.show_modulus_lines ? SKYBLUE : LIGHTGRAY);
             DrawText("Modulus Lines", modulusLineButton.x + 10, modulusLineButton.y + 5, 20, BLACK);
             DrawRectangleRec(contrastButton, coloring_params.enhanced_contrast ? SKYBLUE : LIGHTGRAY);
-            DrawText("Enhanced Contrast", contrastButton.x + 10, contrastButton.y + 5, 18, BLACK);
+            DrawText("Enhanced Contrast", contrastButton.x + 10, contrastButton.y + 5, 20, BLACK);
             DrawRectangleRec(resetButton, LIGHTGRAY);
             DrawText("Reset View", resetButton.x + 30, resetButton.y + 5, 20, BLACK);
             DrawRectangleRec(antiAliasingButton, LIGHTGRAY);
@@ -464,12 +478,12 @@ int main(void) {
                          SCREEN_WIDTH/2 - MeasureText(status_message.message, 20)/2,
                          20, 20, msgColor);
             }
-            DrawText("Left/Right arrows: change function", 10, SCREEN_HEIGHT - 150, 16, DARKGRAY);
-            DrawText("P: toggle phase lines, M: toggle modulus lines", 10, SCREEN_HEIGHT - 170, 16, DARKGRAY);
-            DrawText("C: toggle enhanced contrast", 10, SCREEN_HEIGHT - 190, 16, DARKGRAY);
-            DrawText("[/]: adjust saturation, -/=: adjust contrast", 10, SCREEN_HEIGHT - 210, 16, DARKGRAY);
-            DrawText("A: cycle anti-aliasing (1x→2x→4x→1x)", 10, SCREEN_HEIGHT - 230, 16, DARKGRAY);
-            DrawText("Mouse drag: pan view, Mouse wheel: zoom in/out", 10, SCREEN_HEIGHT - 250, 16, DARKGRAY);
+            DrawText("Left/Right arrows: change function", 10, SCREEN_HEIGHT - 150, 16, WHITE);
+            DrawText("P: toggle phase lines, M: toggle modulus lines", 10, SCREEN_HEIGHT - 170, 16, WHITE);
+            DrawText("C: toggle enhanced contrast", 10, SCREEN_HEIGHT - 190, 16, WHITE);
+            DrawText("[/]: adjust saturation, -/=: adjust contrast", 10, SCREEN_HEIGHT - 210, 16, WHITE);
+            DrawText("A: cycle anti-aliasing (1x→2x→4x→1x)", 10, SCREEN_HEIGHT - 230, 16, WHITE);
+            DrawText("Mouse drag: pan view, Mouse wheel: zoom in/out", 10, SCREEN_HEIGHT - 250, 16, WHITE);
             
         EndDrawing();
     }

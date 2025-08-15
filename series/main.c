@@ -269,6 +269,12 @@ Color get_error_color(double error, float max_error) {
     }
 }
 
+// adapter to use exact function in render_function interface (ignores terms)
+static double complex eval_original_adapter(double complex z, FunctionType type, int terms, bool *error) {
+    (void)terms;
+    return eval_original_function(z, type, error);
+}
+
 void render_function(Color *pixels, double complex (*eval_func)(double complex, FunctionType, int, bool*), 
                      VisualizationParams params, int width, int height, int offset_x) {
     float saturation = 0.9f;
@@ -394,7 +400,7 @@ int main(void) {
     }
     
     if (params.view_mode == VIEW_SPLIT) {
-        render_function(pixels, eval_original_function, params, SCREEN_WIDTH/2, SCREEN_HEIGHT, 0);
+        render_function(pixels, eval_original_adapter, params, SCREEN_WIDTH/2, SCREEN_HEIGHT, 0);
         
         if (params.series_type == SERIES_TAYLOR) {
             render_function(pixels, eval_taylor_series, params, SCREEN_WIDTH/2, SCREEN_HEIGHT, SCREEN_WIDTH/2);
@@ -404,7 +410,7 @@ int main(void) {
     } else if (params.view_mode == VIEW_ERROR) {
         render_error(pixels, params, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     } else if (params.view_mode == VIEW_ORIGINAL) {
-        render_function(pixels, eval_original_function, params, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+        render_function(pixels, eval_original_adapter, params, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     } else { // VIEW_APPROXIMATION
         if (params.series_type == SERIES_TAYLOR) {
             render_function(pixels, eval_taylor_series, params, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
@@ -516,7 +522,7 @@ int main(void) {
             memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(Color));
             
             if (params.view_mode == VIEW_SPLIT) {
-                render_function(pixels, eval_original_function, params, SCREEN_WIDTH/2, SCREEN_HEIGHT, 0);
+                render_function(pixels, eval_original_adapter, params, SCREEN_WIDTH/2, SCREEN_HEIGHT, 0);
                 
                 if (params.series_type == SERIES_TAYLOR) {
                     render_function(pixels, eval_taylor_series, params, SCREEN_WIDTH/2, SCREEN_HEIGHT, SCREEN_WIDTH/2);
@@ -526,7 +532,7 @@ int main(void) {
             } else if (params.view_mode == VIEW_ERROR) {
                 render_error(pixels, params, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
             } else if (params.view_mode == VIEW_ORIGINAL) {
-                render_function(pixels, eval_original_function, params, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+                render_function(pixels, eval_original_adapter, params, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
             } else { // VIEW_APPROXIMATION
                 if (params.series_type == SERIES_TAYLOR) {
                     render_function(pixels, eval_taylor_series, params, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
